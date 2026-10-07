@@ -453,7 +453,7 @@ class GitHubIssueNotifier:
             r = requests.post(f"https://api.github.com/repos/{self.repo}/issues",
                               headers={"Authorization": f"Bearer {self.token}",
                                        "Accept": "application/vnd.github+json"},
-                              json={"title": title, "body": body[:60000], "labels": ["skelbimai"]},
+                              json={"title": title, "body": body[:60000]},
                               timeout=30)
             if not r.ok:
                 log.error("Nepavyko sukurti GitHub pranešimo: %s", r.text[:300])
