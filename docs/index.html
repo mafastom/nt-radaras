@@ -123,6 +123,19 @@ input[type="number"], input[type="search"], select {
 .empty { padding: 40px 20px; text-align: center; color: var(--muted); border: 1px dashed var(--line); border-radius: var(--r); }
 .note { font-size: 0.82rem; color: var(--muted); max-width: 60ch; }
 .sample { background: var(--new-soft); color: var(--new); padding: 8px 12px; border-radius: 8px; font-size: 0.85rem; margin-bottom: 12px; }
+.settings { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; margin-bottom: 18px; display: grid; gap: 18px; }
+.settings h3 { font: 600 1.05rem/1.2 var(--display); margin: 0; }
+.settings .hint { font-size: 0.82rem; color: var(--muted); margin: 0; max-width: 70ch; }
+.srow { display: grid; grid-template-columns: auto minmax(0, 12rem) minmax(0, 1fr) auto; gap: 8px; align-items: center; }
+@media (max-width: 640px) { .srow { grid-template-columns: auto minmax(0, 1fr) auto; } .srow .sname { grid-column: 2 / 4; } .srow .surl { grid-column: 1 / 3; } }
+.srow input[type="text"], .settings input[type="text"] { width: 100%; min-width: 0; padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.iconbtn { border: 1px solid var(--line); background: none; border-radius: 8px; padding: 6px 10px; cursor: pointer; color: var(--muted); }
+.iconbtn:hover { color: var(--bad); border-color: var(--bad); }
+.sgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 210px), 1fr)); gap: 14px; }
+.sactions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.msg { font-size: 0.88rem; }
+.msg.ok { color: var(--good); }
+.msg.err { color: var(--bad); }
 @media (prefers-reduced-motion: no-preference) { .row { transition: border-color .15s; } }
 </style>
 </head>
@@ -135,6 +148,8 @@ input[type="number"], input[type="search"], select {
     </h1>
     <span class="updated" id="updated">Kraunama…</span>
     <div class="actions">
+      <button class="btn" id="runNow" type="button" hidden>Tikrinti dabar</button>
+      <button class="btn" id="settingsBtn" type="button" aria-expanded="false" hidden>Nustatymai</button>
       <button class="btn" id="markSeen" type="button">Pažymėti matytais</button>
       <button class="btn primary" id="notify" type="button">Įjungti pranešimus</button>
     </div>
@@ -176,11 +191,38 @@ input[type="number"], input[type="search"], select {
         <label class="check"><input type="checkbox" id="onlyActive" checked> Slėpti nebeaktyvius</label>
       </div>
       <button class="reset" id="reset" type="button">Išvalyti filtrus</button>
-      <p class="note">Pranešimų filtrai ir sekamos paieškos nustatomi faile config.yaml. Čia esantys filtrai tik susiaurina šį sąrašą.</p>
+      <p class="note">Sekamos paieškos ir pranešimų filtrai keičiami mygtuku „Nustatymai“. Čia esantys filtrai tik susiaurina šį sąrašą.</p>
     </div>
   </aside>
 
   <section aria-live="polite">
+    <form class="settings" id="settings" hidden>
+      <div class="fgroup">
+        <h3>Sekamos paieškos</h3>
+        <p class="hint">Portale susidėkite filtrus (miestas, rajonas, tipas, pardavimas ar nuoma), surūšiuokite „naujausi viršuje“ ir nukopijuokite naršyklės adresą čia. Tinka skelbiu.lt, alio.lt, domoplius.lt ir realu.lt. Aruodas.lt automatinio tikrinimo neleidžia, todėl jam naudokite paties portalo pranešimus.</p>
+        <div id="searchRows" class="list"></div>
+        <div><button class="btn" type="button" id="addSearch">+ Pridėti paiešką</button></div>
+      </div>
+      <div class="fgroup">
+        <h3>Apie ką pranešti</h3>
+        <p class="hint">Mac pranešimą gausite tik apie skelbimus, kurie atitinka šiuos filtrus. Tušti laukai reiškia „nesvarbu“.</p>
+        <div class="sgrid">
+          <div class="fgroup"><span class="lbl">Kaina, €</span><div class="range"><input type="number" id="cf_price_min" placeholder="nuo"><input type="number" id="cf_price_max" placeholder="iki"></div></div>
+          <div class="fgroup"><span class="lbl">Plotas, m²</span><div class="range"><input type="number" id="cf_area_min" placeholder="nuo"><input type="number" id="cf_area_max" placeholder="iki"></div></div>
+          <div class="fgroup"><span class="lbl">Kambariai</span><div class="range"><input type="number" id="cf_rooms_min" placeholder="nuo"><input type="number" id="cf_rooms_max" placeholder="iki"></div></div>
+          <div class="fgroup"><label for="cf_price_per_m2_max">Max €/m²</label><input type="number" id="cf_price_per_m2_max"></div>
+          <div class="fgroup"><label for="cf_include_keywords">Turi būti bent vienas žodis</label><input type="text" id="cf_include_keywords" placeholder="pvz. balkon, parking"></div>
+          <div class="fgroup"><label for="cf_exclude_keywords">Atmesti, jei yra žodis</label><input type="text" id="cf_exclude_keywords" placeholder="pvz. dalis buto"></div>
+          <div class="fgroup"><label for="cf_interval">Tikrinti kas, min.</label><input type="number" id="cf_interval" min="5"></div>
+        </div>
+        <label class="check"><input type="checkbox" id="cf_drops"> Pranešti ir apie sumažėjusias kainas</label>
+      </div>
+      <div class="sactions">
+        <button class="btn primary" type="submit">Išsaugoti</button>
+        <button class="btn" type="button" id="closeSettings">Uždaryti</button>
+        <span class="msg" id="settingsMsg" role="status"></span>
+      </div>
+    </form>
     <div class="sample" id="sample" hidden>Tai peržiūra su pavyzdiniais skelbimais. Tikri skelbimai atsiras, kai įrankis bus paleistas.</div>
     <div class="summary">
       <h2 id="count">Skelbimai</h2>
@@ -398,6 +440,72 @@ input[type="number"], input[type="search"], select {
     }
     knownKeys = keys;
   }
+
+  // ---- nustatymai (veikia tik kai radaras paleistas jūsų kompiuteryje)
+  var cfg = null;
+  var NUMS = ["price_min", "price_max", "area_min", "area_max", "rooms_min", "rooms_max", "price_per_m2_max"];
+  function searchRow(sr) {
+    var d = document.createElement("div");
+    d.className = "srow";
+    d.innerHTML = '<input type="checkbox" class="sen" aria-label="Įjungta"' + (sr.enabled !== false ? " checked" : "") + '>' +
+      '<input type="text" class="sname" placeholder="Pavadinimas" aria-label="Pavadinimas">' +
+      '<input type="text" class="surl" placeholder="https://www.skelbiu.lt/..." aria-label="Nuoroda">' +
+      '<button type="button" class="iconbtn" aria-label="Pašalinti">Šalinti</button>';
+    d.querySelector(".sname").value = sr.name || "";
+    d.querySelector(".surl").value = sr.url || "";
+    d.querySelector(".iconbtn").addEventListener("click", function () { d.remove(); });
+    return d;
+  }
+  function fillSettings() {
+    var rows = $("searchRows"); rows.innerHTML = "";
+    cfg.searches.forEach(function (sr) { rows.appendChild(searchRow(sr)); });
+    if (!cfg.searches.length) rows.appendChild(searchRow({}));
+    NUMS.forEach(function (k) { $("cf_" + k).value = cfg.filters[k] == null ? "" : cfg.filters[k]; });
+    $("cf_include_keywords").value = (cfg.filters.include_keywords || []).join(", ");
+    $("cf_exclude_keywords").value = (cfg.filters.exclude_keywords || []).join(", ");
+    $("cf_interval").value = cfg.interval_minutes;
+    $("cf_drops").checked = cfg.notify_price_drops;
+  }
+  function openSettings(open) {
+    $("settings").hidden = !open;
+    $("settingsBtn").setAttribute("aria-expanded", open);
+    if (open) { fillSettings(); $("settingsMsg").textContent = ""; }
+  }
+  fetch("api/config", { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (c) {
+    if (!c || !c.filters) return;
+    cfg = c;
+    $("settingsBtn").hidden = false; $("runNow").hidden = false;
+    if (!cfg.searches.length) openSettings(true);
+  }).catch(function () {});
+  $("settingsBtn").addEventListener("click", function () { openSettings($("settings").hidden); });
+  $("closeSettings").addEventListener("click", function () { openSettings(false); });
+  $("addSearch").addEventListener("click", function () { $("searchRows").appendChild(searchRow({})); });
+  $("settings").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var body = { filters: {}, searches: [], interval_minutes: Number($("cf_interval").value) || 15, notify_price_drops: $("cf_drops").checked };
+    NUMS.forEach(function (k) { body.filters[k] = $("cf_" + k).value; });
+    body.filters.include_keywords = $("cf_include_keywords").value;
+    body.filters.exclude_keywords = $("cf_exclude_keywords").value;
+    body.filters.keep_if_unknown = true;
+    Array.prototype.forEach.call(document.querySelectorAll("#searchRows .srow"), function (r) {
+      var url = r.querySelector(".surl").value.trim();
+      if (url) body.searches.push({ name: r.querySelector(".sname").value, url: url, enabled: r.querySelector(".sen").checked });
+    });
+    var msg = $("settingsMsg");
+    msg.className = "msg"; msg.textContent = "Saugoma…";
+    fetch("api/config", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
+      .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || r.status); return j; }); })
+      .then(function (c) { cfg = c; msg.className = "msg ok"; msg.textContent = "Išsaugota. Tikrinu portalus, rezultatai atsiras po minutės."; pollSoon(); })
+      .catch(function (err) { msg.className = "msg err"; msg.textContent = "Neišsaugota: " + err.message; });
+  });
+  $("runNow").addEventListener("click", function () {
+    $("runNow").textContent = "Tikrinama…";
+    fetch("api/run", { method: "POST" }).then(pollSoon, function () {}).finally(function () {
+      setTimeout(function () { $("runNow").textContent = "Tikrinti dabar"; }, 4000);
+    });
+  });
+  // po rankinio patikrinimo kelis kartus greičiau atnaujinam sąrašą
+  function pollSoon() { [20, 45, 90, 150].forEach(function (s) { setTimeout(load, s * 1000); }); }
   paintNotify();
   load();
   setInterval(load, 5 * 60 * 1000);

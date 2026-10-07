@@ -3,3 +3,6 @@ __pycache__/
 .pytest_cache/
 seen.sqlite3
 *.tmp
+.venv/
+radaras.log
+docs/listings.json

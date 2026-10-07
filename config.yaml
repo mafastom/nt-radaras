@@ -1,46 +1,16 @@
-# Paieškų nustatymai. Pakeitus šį failą (GitHub'e: pieštuko ikona), įrankis
-# naujus nustatymus naudos nuo kito patikrinimo.
-#
-# PAPRASČIAUSIAS BŪDAS: portale (aruodas, skelbiu, alio...) susidėkite filtrus
-# kaip įprastai (miestas, rajonas, tipas, pardavimas/nuoma, kaina...),
-# surūšiuokite „naujausi viršuje“ ir nukopijuokite naršyklės adresą į `url`.
-
-notify_price_drops: true      # pranešti, kai jau matyto skelbimo kaina sumažėja
-respect_robots_txt: true      # laikytis portalų robots.txt taisyklių
-
-# Bendri filtrai visoms paieškoms (tušti = nefiltruoti).
+# Šį failą keičia NT radaro „Nustatymai“ langas.
+interval_minutes: 15
+notify_price_drops: true
+respect_robots_txt: true
 filters:
   price_min: null
-  price_max: 180000
-  area_min: 40
+  price_max: null
+  area_min: null
   area_max: null
-  rooms_min: 2
-  rooms_max: 3
+  rooms_min: null
+  rooms_max: null
   price_per_m2_max: null
-  include_keywords: []                  # pvz. ["balkon", "parking"] — bent vienas turi būti
-  exclude_keywords: ["dalis buto", "be apdailos"]
-  keep_if_unknown: true                 # jei kainos/ploto nepavyko nuskaityti, vis tiek pranešti
-
-searches:
-  - name: "Vilnius butai pardavimui (aruodas)"
-    url: "https://www.aruodas.lt/butai/vilniuje/?FOrder=AddDate"
-    pages: 1
-
-  - name: "Vilnius butai (skelbiu)"
-    url: "https://www.skelbiu.lt/skelbimai/nekilnojamasis-turtas/butai/vilnius/"
-    pages: 1
-
-  - name: "Vilnius butai (domoplius)"
-    url: "https://domoplius.lt/skelbimai/butai?action_type=1&address_1=461"
-    pages: 1
-
-  - name: "Nuoma Kaune (alio) — tik pigesni"
-    url: "https://www.alio.lt/nekilnojamas-turtas/butu-nuoma/kaunas.html"
-    filters:                            # paieškos filtrai perrašo bendruosius
-      price_max: 600
-      area_min: null
-      rooms_min: 1
-
-  # - name: "realu.lt"
-  #   url: "https://www.realu.lt/..."
-  #   listing_pattern: 'realu\.lt/.+-(\d{4,})/?$'   # jei skelbimai neatpažįstami
+  include_keywords: []
+  exclude_keywords: []
+  keep_if_unknown: true
+searches: []

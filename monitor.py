@@ -174,7 +174,7 @@ def _card_for(a: Tag, pattern: re.Pattern, base_url: str, max_up: int = 6) -> Ta
 def extract_listings(html: str, page_url: str, pattern_src: str | None = None,
                      search_name: str = "") -> list[Listing]:
     site = site_for(page_url)
-    pattern = re.compile(pattern_src or SITES.get(site, r"/(\d{6,})(?:\.html|/)?$"), re.I)
+    pattern = re.compile(pattern_src or SITES.get(site, r"[/-](\d{6,})(?:\.html?|/)?$"), re.I)
     soup = BeautifulSoup(html, "html.parser")
     for t in soup(["script", "style", "noscript"]):
         t.decompose()
@@ -392,6 +392,8 @@ class Fetcher:
             log.warning("%s grąžino HTTP %s%s", url, r.status_code, hint)
             self.last_error = f"HTTP {r.status_code}{hint}"
             return None
+        if "charset" not in r.headers.get("Content-Type", "").lower():
+            r.encoding = r.apparent_encoding or "utf-8"
         return r.text
 
 
