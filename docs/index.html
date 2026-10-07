@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="lt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!--PAGE-->
+<title>NT radaras</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600&display=swap">
+<style>
+/* Layout: sticky header with portal status, filter rail left (drawer on phone), dense listing rows right */
+:root {
+  --bg: #f3f5f4;
+  --surface: #ffffff;
+  --ink: #17201d;
+  --muted: #5d6a65;
+  --line: #dde3e0;
+  --accent: #2443c9;
+  --accent-soft: #e6eafb;
+  --new: #b26b00;
+  --new-soft: #fff0d6;
+  --good: #1b7a46;
+  --good-soft: #def3e6;
+  --bad: #b3261e;
+  --bad-soft: #fbe3e1;
+  --display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --body: "Figtree", "Helvetica Neue", "Segoe UI", system-ui, sans-serif;
+  --r: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1412; --surface: #171d1b; --ink: #e7ecea; --muted: #97a39e; --line: #2a3330;
+    --accent: #8fa3ff; --accent-soft: #1f2747; --new: #f0b44c; --new-soft: #3a2a0c;
+    --good: #6fd39b; --good-soft: #143222; --bad: #ff8a80; --bad-soft: #3d1715; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1412; --surface: #171d1b; --ink: #e7ecea; --muted: #97a39e; --line: #2a3330;
+  --accent: #8fa3ff; --accent-soft: #1f2747; --new: #f0b44c; --new-soft: #3a2a0c;
+  --good: #6fd39b; --good-soft: #143222; --bad: #ff8a80; --bad-soft: #3d1715; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--body); }
+a { color: inherit; }
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.top {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(8px); border-bottom: 1px solid var(--line);
+}
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; }
+@media (max-width: 820px) { .top { position: static; } }
+.top .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; padding-block: 12px; }
+.brand { font: 800 1.45rem/1 var(--display); letter-spacing: -0.02em; margin: 0; display: flex; align-items: center; gap: 8px; }
+.brand svg { flex: none; }
+.updated { color: var(--muted); font-size: 0.85rem; }
+.top .actions { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+.btn {
+  border: 1px solid var(--line); background: var(--surface); border-radius: 999px;
+  padding: 6px 14px; cursor: pointer; font-weight: 500; font-size: 0.9rem;
+}
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+.btn[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); }
+
+.portals { display: flex; flex-wrap: wrap; gap: 6px; padding-block: 0 12px; }
+.portal { font-size: 0.8rem; padding: 3px 10px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); display: inline-flex; gap: 6px; align-items: center; }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--good); }
+.portal.err .dot { background: var(--bad); }
+.portal.err { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 35%, var(--line)); }
+
+main.wrap { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 28px; padding-block: 22px 60px; }
+@media (max-width: 820px) { main.wrap { grid-template-columns: minmax(0, 1fr); gap: 14px; } }
+
+.filters { display: grid; gap: 16px; align-content: start; position: sticky; top: 130px; }
+@media (max-width: 820px) { .filters { position: static; } .filters[data-open="false"] .fbody { display: none; } }
+.ftoggle { display: none; }
+@media (max-width: 820px) { .ftoggle { display: inline-flex; } }
+.fbody { display: grid; gap: 16px; }
+.fgroup { display: grid; gap: 6px; }
+.fgroup > label, .fgroup > .lbl { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; }
+.range { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+input[type="number"], input[type="search"], select {
+  width: 100%; min-width: 0; padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface);
+}
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 3px 11px; cursor: pointer; font-size: 0.85rem; }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.fgroup > label.check { text-transform: none; letter-spacing: 0; font-size: 0.92rem; font-weight: 400; color: var(--ink); }
+.check { display: flex; gap: 8px; align-items: center; font-size: 0.92rem; cursor: pointer; }
+.reset { justify-self: start; background: none; border: 0; padding: 0; color: var(--accent); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+
+.summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; margin-bottom: 12px; }
+.summary h2 { font: 600 1.15rem/1.2 var(--display); margin: 0; }
+.summary .muted { color: var(--muted); font-size: 0.9rem; }
+.summary select { width: auto; margin-left: auto; }
+
+.list { display: grid; gap: 8px; }
+.row {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 18px; align-items: start;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px 16px;
+  text-decoration: none;
+}
+.row:hover { border-color: var(--accent); }
+.row.is-new { border-left: 3px solid var(--new); }
+.meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 0.78rem; color: var(--muted); }
+.site { font-weight: 600; color: var(--ink); }
+.pill { font-size: 0.72rem; font-weight: 600; padding: 1px 8px; border-radius: 999px; letter-spacing: 0.02em; }
+.pill.new { background: var(--new-soft); color: var(--new); }
+.pill.drop { background: var(--good-soft); color: var(--good); }
+.pill.off { background: var(--bg); color: var(--muted); border: 1px solid var(--line); }
+.title { font-weight: 600; margin: 4px 0 2px; overflow-wrap: anywhere; }
+.facts { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 0.88rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.price { text-align: right; font: 700 1.2rem/1.2 var(--display); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.price small { display: block; font: 400 0.78rem/1.4 var(--body); color: var(--muted); }
+.price s { color: var(--muted); font-weight: 400; font-size: 0.85rem; }
+@media (max-width: 520px) { .row { grid-template-columns: minmax(0, 1fr); } .price { text-align: left; } }
+
+.empty { padding: 40px 20px; text-align: center; color: var(--muted); border: 1px dashed var(--line); border-radius: var(--r); }
+.note { font-size: 0.82rem; color: var(--muted); max-width: 60ch; }
+.sample { background: var(--new-soft); color: var(--new); padding: 8px 12px; border-radius: 8px; font-size: 0.85rem; margin-bottom: 12px; }
+@media (prefers-reduced-motion: no-preference) { .row { transition: border-color .15s; } }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <h1 class="brand">
+      <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="11" fill="none" stroke="var(--accent)" stroke-width="2"/><circle cx="13" cy="13" r="5.5" fill="none" stroke="var(--accent)" stroke-width="2" opacity=".5"/><path d="M13 13 L22 6" stroke="var(--new)" stroke-width="2.5" stroke-linecap="round"/><circle cx="13" cy="13" r="2" fill="var(--ink)"/></svg>
+      NT radaras
+    </h1>
+    <span class="updated" id="updated">Kraunama…</span>
+    <div class="actions">
+      <button class="btn" id="markSeen" type="button">Pažymėti matytais</button>
+      <button class="btn primary" id="notify" type="button">Įjungti pranešimus</button>
+    </div>
+  </div>
+  <div class="wrap portals" id="portals" aria-label="Portalų būsena"></div>
+</header>
+
+<main class="wrap">
+  <aside class="filters" id="filters" data-open="false">
+    <button class="btn ftoggle" id="ftoggle" type="button" aria-expanded="false">Filtrai</button>
+    <div class="fbody">
+      <div class="fgroup">
+        <label for="q">Paieška</label>
+        <input type="search" id="q" placeholder="pvz. Žirmūnai, balkonas">
+      </div>
+      <div class="fgroup">
+        <span class="lbl">Portalai</span>
+        <div class="chips" id="sites"></div>
+      </div>
+      <div class="fgroup">
+        <span class="lbl">Kaina, €</span>
+        <div class="range"><input type="number" id="pmin" placeholder="nuo" inputmode="numeric"><input type="number" id="pmax" placeholder="iki" inputmode="numeric"></div>
+      </div>
+      <div class="fgroup">
+        <span class="lbl">Plotas, m²</span>
+        <div class="range"><input type="number" id="amin" placeholder="nuo" inputmode="numeric"><input type="number" id="amax" placeholder="iki" inputmode="numeric"></div>
+      </div>
+      <div class="fgroup">
+        <span class="lbl">Kambariai</span>
+        <div class="chips" id="rooms"></div>
+      </div>
+      <div class="fgroup">
+        <label for="ppm">Max €/m²</label>
+        <input type="number" id="ppm" placeholder="pvz. 3000" inputmode="numeric">
+      </div>
+      <div class="fgroup">
+        <label class="check"><input type="checkbox" id="onlyNew"> Tik nauji per 24 val.</label>
+        <label class="check"><input type="checkbox" id="onlyMatch" checked> Tik atitinkantys pranešimų filtrus</label>
+        <label class="check"><input type="checkbox" id="onlyActive" checked> Slėpti nebeaktyvius</label>
+      </div>
+      <button class="reset" id="reset" type="button">Išvalyti filtrus</button>
+      <p class="note">Pranešimų filtrai ir sekamos paieškos nustatomi faile config.yaml. Čia esantys filtrai tik susiaurina šį sąrašą.</p>
+    </div>
+  </aside>
+
+  <section aria-live="polite">
+    <div class="sample" id="sample" hidden>Tai peržiūra su pavyzdiniais skelbimais. Tikri skelbimai atsiras, kai įrankis bus paleistas.</div>
+    <div class="summary">
+      <h2 id="count">Skelbimai</h2>
+      <span class="muted" id="countNew"></span>
+      <select id="sort" aria-label="Rikiavimas">
+        <option value="new">Naujausi viršuje</option>
+        <option value="priceAsc">Pigiausi</option>
+        <option value="priceDesc">Brangiausi</option>
+        <option value="ppm">Pigiausi už m²</option>
+      </select>
+    </div>
+    <div class="list" id="list"></div>
+  </section>
+</main>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  var store = {
+    get: function (k, d) { try { var v = localStorage.getItem("ntr." + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set: function (k, v) { try { localStorage.setItem("ntr." + k, JSON.stringify(v)); } catch (e) {} }
+  };
+  var SITE_NAMES = { "aruodas.lt": "Aruodas", "skelbiu.lt": "Skelbiu", "alio.lt": "Alio", "domoplius.lt": "Domoplius", "realu.lt": "Realu" };
+  var ROOM_OPTS = ["1", "2", "3", "4+"];
+  var data = null, items = [], knownKeys = null;
+  var seenUpTo = store.get("seenUpTo", null);
+  var state = Object.assign({ q: "", sites: [], rooms: [], pmin: "", pmax: "", amin: "", amax: "", ppm: "", onlyNew: false, onlyMatch: true, onlyActive: true, sort: "new" }, store.get("filters", {}));
+
+  var nf = new Intl.NumberFormat("lt-LT", { maximumFractionDigits: 0 });
+  function eur(v) { return nf.format(v) + " €"; }
+  function ago(iso) {
+    var s = (Date.now() - Date.parse(iso)) / 1000;
+    if (s < 90) return "ką tik";
+    if (s < 3600) return "prieš " + Math.round(s / 60) + " min.";
+    if (s < 86400) return "prieš " + Math.round(s / 3600) + " val.";
+    var d = Math.round(s / 86400);
+    return "prieš " + d + (d === 1 ? " d." : " d.");
+  }
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function siteName(s) { return SITE_NAMES[s] || s; }
+
+  function load() {
+    return fetch("listings.json?ts=" + Date.now(), { cache: "no-store" })
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function (d) {
+        data = d;
+        var runAt = Date.parse(d.updated_at || 0);
+        items = Object.keys(d.listings || {}).map(function (k) {
+          var l = d.listings[k]; l.key = k;
+          var h = l.price_history || [];
+          l.prevPrice = h.length > 1 ? h[h.length - 2][1] : null;
+          l.dropped = l.prevPrice && l.price && l.price < l.prevPrice;
+          // skelbimas nebeaktyvus, jei paskutinį kartą matytas gerokai anksčiau nei paskutinis patikrinimas
+          l.inactive = runAt && (runAt - Date.parse(l.last_seen)) > 6 * 3600 * 1000;
+          return l;
+        });
+        if (seenUpTo == null) {
+          // pavyzdiniuose duomenyse parodom, kaip atrodo nauji skelbimai
+          seenUpTo = d.sample ? new Date(runAt - 2 * 3600 * 1000).toISOString().replace(/\.\d+Z$/, "Z") : d.updated_at;
+          store.set("seenUpTo", seenUpTo);
+        }
+        notifyNew();
+        renderStatus(); renderSiteChips(); render();
+      })
+      .catch(function () {
+        $("updated").textContent = "Nepavyko įkelti duomenų";
+        $("list").innerHTML = '<div class="empty">Duomenų dar nėra. Jie atsiras po pirmo patikrinimo.</div>';
+      });
+  }
+
+  function isNew(l) { return seenUpTo && l.first_seen > seenUpTo; }
+
+  function renderStatus() {
+    $("updated").textContent = data.updated_at ? "Atnaujinta " + ago(data.updated_at) : "";
+    $("sample").hidden = !data.sample;
+    var s = data.searches || {};
+    $("portals").innerHTML = Object.keys(s).map(function (name) {
+      var x = s[name];
+      var label = esc(name) + (x.error ? ": " + esc(x.error) : " · " + x.found);
+      return '<span class="portal' + (x.error ? " err" : "") + '" title="' + esc(x.url) + '"><span class="dot"></span>' + label + "</span>";
+    }).join("");
+  }
+
+  function renderSiteChips() {
+    var sites = Array.from(new Set(items.map(function (l) { return l.site; }))).sort();
+    $("sites").innerHTML = sites.map(function (s) {
+      return '<button type="button" class="chip" data-site="' + esc(s) + '" aria-pressed="' + (state.sites.indexOf(s) >= 0) + '">' + esc(siteName(s)) + "</button>";
+    }).join("");
+    $("rooms").innerHTML = ROOM_OPTS.map(function (r) {
+      return '<button type="button" class="chip" data-room="' + r + '" aria-pressed="' + (state.rooms.indexOf(r) >= 0) + '">' + r + "</button>";
+    }).join("");
+  }
+
+  function num(v) { return v === "" || v == null ? null : Number(v); }
+
+  function filtered() {
+    var q = state.q.trim().toLowerCase();
+    var pmin = num(state.pmin), pmax = num(state.pmax), amin = num(state.amin), amax = num(state.amax), ppm = num(state.ppm);
+    var dayAgo = new Date(Date.now() - 86400000).toISOString();
+    return items.filter(function (l) {
+      if (state.onlyMatch && l.matches === false) return false;
+      if (state.onlyActive && l.inactive) return false;
+      if (state.onlyNew && l.first_seen < dayAgo) return false;
+      if (state.sites.length && state.sites.indexOf(l.site) < 0) return false;
+      if (state.rooms.length) {
+        var r = l.rooms == null ? null : (l.rooms >= 4 ? "4+" : String(l.rooms));
+        if (r == null || state.rooms.indexOf(r) < 0) return false;
+      }
+      if (pmin != null && (l.price == null || l.price < pmin)) return false;
+      if (pmax != null && (l.price == null || l.price > pmax)) return false;
+      if (amin != null && (l.area == null || l.area < amin)) return false;
+      if (amax != null && (l.area == null || l.area > amax)) return false;
+      if (ppm != null && (!l.price || !l.area || l.price / l.area > ppm)) return false;
+      if (q && ((l.title || "") + " " + (l.text || "") + " " + (l.search || "")).toLowerCase().indexOf(q) < 0) return false;
+      return true;
+    }).sort(function (a, b) {
+      var big = 1e12;
+      if (state.sort === "priceAsc") return (a.price || big) - (b.price || big);
+      if (state.sort === "priceDesc") return (b.price || 0) - (a.price || 0);
+      if (state.sort === "ppm") return ((a.price && a.area) ? a.price / a.area : big) - ((b.price && b.area) ? b.price / b.area : big);
+      return a.first_seen < b.first_seen ? 1 : -1;
+    });
+  }
+
+  function render() {
+    var list = filtered();
+    var nNew = list.filter(isNew).length;
+    $("count").textContent = list.length + " skelbim" + (list.length % 10 === 1 && list.length % 100 !== 11 ? "as" : (list.length % 10 === 0 || (list.length % 100 > 10 && list.length % 100 < 20) ? "ų" : "ai"));
+    $("countNew").textContent = nNew ? nNew + " nauji nuo paskutinio apsilankymo" : "";
+    if (!list.length) {
+      $("list").innerHTML = '<div class="empty">' + (items.length ? "Pagal šiuos filtrus skelbimų nėra." : "Skelbimų dar nėra. Jie atsiras po pirmo patikrinimo.") + "</div>";
+      return;
+    }
+    $("list").innerHTML = list.slice(0, 300).map(function (l) {
+      var facts = [];
+      if (l.rooms) facts.push(l.rooms + " kamb.");
+      if (l.area) facts.push(String(l.area).replace(".", ",") + " m²");
+      if (l.search) facts.push(esc(l.search));
+      var ppm = l.price && l.area ? eur(l.price / l.area) + "/m²" : "";
+      var pills = (isNew(l) ? '<span class="pill new">Naujas</span>' : "") +
+        (l.dropped ? '<span class="pill drop">Kaina −' + nf.format(Math.round((1 - l.price / l.prevPrice) * 100)) + "%</span>" : "") +
+        (l.inactive ? '<span class="pill off">Nebeaktyvus</span>' : "");
+      return '<a class="row' + (isNew(l) ? " is-new" : "") + '" href="' + esc(l.url) + '" target="_blank" rel="noopener">' +
+        '<div style="min-width:0"><div class="meta"><span class="site">' + esc(siteName(l.site)) + "</span><span>" + ago(l.first_seen) + "</span>" + pills + "</div>" +
+        '<div class="title">' + esc(l.title || l.url) + "</div>" +
+        '<div class="facts">' + facts.map(function (f) { return "<span>" + f + "</span>"; }).join("") + "</div></div>" +
+        '<div class="price">' + (l.price ? (l.dropped ? "<s>" + eur(l.prevPrice) + "</s> " : "") + eur(l.price) : "Kaina nenurodyta") +
+        (ppm ? "<small>" + ppm + "</small>" : "") + "</div></a>";
+    }).join("");
+  }
+
+  function save() { store.set("filters", state); render(); }
+
+  // ---- valdikliai
+  ["q", "pmin", "pmax", "amin", "amax", "ppm"].forEach(function (id) {
+    $(id).value = state[id];
+    $(id).addEventListener("input", function () { state[id] = $(id).value; save(); });
+  });
+  ["onlyNew", "onlyMatch", "onlyActive"].forEach(function (id) {
+    $(id).checked = state[id];
+    $(id).addEventListener("change", function () { state[id] = $(id).checked; save(); });
+  });
+  $("sort").value = state.sort;
+  $("sort").addEventListener("change", function () { state.sort = $("sort").value; save(); });
+  document.addEventListener("click", function (e) {
+    var c = e.target.closest(".chip");
+    if (!c) return;
+    var key = c.dataset.site ? "sites" : "rooms", val = c.dataset.site || c.dataset.room;
+    var i = state[key].indexOf(val);
+    if (i >= 0) state[key].splice(i, 1); else state[key].push(val);
+    c.setAttribute("aria-pressed", i < 0);
+    save();
+  });
+  $("reset").addEventListener("click", function () {
+    state = { q: "", sites: [], rooms: [], pmin: "", pmax: "", amin: "", amax: "", ppm: "", onlyNew: false, onlyMatch: true, onlyActive: true, sort: state.sort };
+    ["q", "pmin", "pmax", "amin", "amax", "ppm"].forEach(function (id) { $(id).value = ""; });
+    $("onlyNew").checked = false; $("onlyMatch").checked = true; $("onlyActive").checked = true;
+    renderSiteChips(); save();
+  });
+  $("ftoggle").addEventListener("click", function () {
+    var open = $("filters").dataset.open !== "true";
+    $("filters").dataset.open = open; $("ftoggle").setAttribute("aria-expanded", open);
+  });
+  $("markSeen").addEventListener("click", function () {
+    if (!data) return;
+    seenUpTo = data.updated_at; store.set("seenUpTo", seenUpTo); render();
+  });
+
+  // ---- naršyklės pranešimai, kol puslapis atidarytas
+  function notifPerm() { return ("Notification" in window) ? Notification.permission : "unsupported"; }
+  function paintNotify() {
+    var p = notifPerm();
+    $("notify").textContent = p === "granted" ? "Pranešimai įjungti" : p === "denied" || p === "unsupported" ? "Pranešimai išjungti naršyklėje" : "Įjungti pranešimus";
+    $("notify").setAttribute("aria-pressed", p === "granted");
+    $("notify").disabled = p !== "default";
+  }
+  $("notify").addEventListener("click", function () {
+    if (notifPerm() !== "default") return;
+    try {
+      var r = Notification.requestPermission(paintNotify);
+      if (r && r.then) r.then(paintNotify, paintNotify);
+    } catch (e) { paintNotify(); }
+  });
+  function notifyNew() {
+    var keys = new Set(items.map(function (l) { return l.key; }));
+    if (knownKeys && notifPerm() === "granted") {
+      var fresh = items.filter(function (l) { return !knownKeys.has(l.key) && l.matches !== false; });
+      fresh.slice(0, 5).forEach(function (l) {
+        try {
+          var n = new Notification("Naujas skelbimas · " + siteName(l.site), { body: (l.price ? eur(l.price) + " · " : "") + (l.title || ""), tag: l.key });
+          n.onclick = function () { window.open(l.url, "_blank"); };
+        } catch (e) {}
+      });
+    }
+    knownKeys = keys;
+  }
+  paintNotify();
+  load();
+  setInterval(load, 5 * 60 * 1000);
+})();
+</script>
+</body>
+</html>
